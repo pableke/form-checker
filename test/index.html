@@ -7,6 +7,32 @@
 	<script type="text/javascript" src="../lib/jquery.js"></script>
 	<script type="text/javascript" src="../lib/jquery-ui.js"></script>
 	<script type="text/javascript" src="../form-checker.js"></script>
+
+	<style type="text/css">
+		.ui-tooltip {
+			background: #666;
+			color: white;
+			border: none;
+			padding: 7px;
+			width: 200px;
+		}
+		.ui-tooltip-content {
+			position: relative;
+		}
+		.ui-tooltip-content::after {
+			content: '';
+			position: absolute;
+			border-style: solid;
+			display: block;
+			width: 0px;
+		}
+		.arrow .ui-tooltip-content::after {
+			top: 0px;
+			left: -16px;
+			border-color: transparent #666;
+			border-width: 10px 10px 10px 0px;
+		}
+	</style>
 </head>
 <body>
 
