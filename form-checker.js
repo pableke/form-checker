@@ -392,7 +392,7 @@ function FormChecker(form, i18n) {
 
 	this.loadErrors = function(errors) {
 		for (var k in errors)
-			_tooltip($("[name=" + k + "]:input", form), errors[k]);
+			_tooltip($("[name=" + k + "]:input", form)[0], errors[k]);
 		return this;
 	};
 
