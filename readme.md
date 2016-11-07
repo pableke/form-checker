@@ -1,50 +1,11 @@
-<!doctype html>
-<html>
-<head>
-	<meta charset="utf-8" />
-	<title>Form-Checker Examples</title>
+# form-checker
 
-	<script type="text/javascript" src="../lib/jquery.js"></script>
-	<!-- <script type="text/javascript" src="../lib/jquery-ui.js"></script> -->
-	<script type="text/javascript" src="../form-checker.js"></script>
+Form validator by the attributes specified in the inputs tags, validate fields in the client side.
 
-	<style type="text/css">
-		.tooltip {
-			position: relative;
-			background: black;
-			margin-left: 3px;
-			padding: 6px;
-			color: #fff;
-			border-radius: 6px;
-			/*border: 4px solid #c2e1f5;*/
-		}
-		.tooltip:after, .tooltip:before {
-			right: 100%;
-			top: 50%;
-			border: solid transparent;
-			content: " ";
-			height: 0;
-			width: 0;
-			position: absolute;
-			pointer-events: none;
-		}
+## Usage
 
-		.tooltip:after {
-			/*border-color: rgba(136, 183, 213, 0);*/
-			border-right-color: black;
-			border-width: 8px;
-			margin-top: -8px;
-		}
-		.tooltip:before {
-			/*border-color: rgba(194, 225, 245, 0);
-			border-right-color: #c2e1f5;*/
-			border-width: 20px;
-			margin-top: -20px;
-		}
-	</style>
-</head>
-<body>
-
+A simple example:
+```js
 <form name="test" action="./index.html">
 	<div id="inputs">
 		<label for="number">Number Validation Examples</label><br />
@@ -97,7 +58,6 @@
 </form>
 
 <script type="text/javascript">
-	$("input[tabindex=1]").focus();
 	var fc = new FormChecker($("form")[0]);
 	$("form").submit(function() {
 		fc.flush();
@@ -105,6 +65,7 @@
 		return false;
 	});
 </script>
+```
+## License
 
-</body>
-</html>
+(c) 2015-2016 Pablo Rosique, GitHub Inc.

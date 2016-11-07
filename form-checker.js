@@ -290,11 +290,9 @@ function DateFormat() {
 
 //funcion factoria de validadores
 function FormChecker(form, i18n) {
-	//internacionalization object
-	i18n = i18n || {
-		"msg.err.value": "Invalid data",
-		"msg.err.form": "Form contains errors"
-	};
+	i18n = i18n || {}; //internacionalization object
+	i18n["msg.err.value"] = i18n["msg.err.value"] || "Invalid data";
+	i18n["msg.err.form"] = i18n["msg.err.form"] || "Form contains errors";
 
 	var nf = new NumberFormat();
 	var df = new DateFormat();
@@ -307,10 +305,9 @@ function FormChecker(form, i18n) {
 	var _bool = function(elem, name) { return _boolval(_val(elem, name)); };
 
 	var _tooltip = function(elem, attr) {
-		var pos = { my: "left center", at: "right+12 center" };
 		var msg = _attr(elem, "data-msg-" + attr) || i18n["msg.err." + attr] || i18n["msg.err.value"];
 		var box = (_attr(elem, "type") == "hidden") ? $(elem).siblings("[alt=errbox]") : $(elem);
-		box.tooltip({position: pos, content: msg, tooltipClass: "arrow", items: "[alt]"}).tooltip("open");
+		box.next("span.tooltip").length || box.after('<span class="tooltip">' + msg + '</span>').show();
 		return elem;
 	};
 
@@ -393,15 +390,13 @@ function FormChecker(form, i18n) {
 	this.errors = function(errors) {
 		if (errors) {
 			for (var k in errors)
-				_tooltip($("[name=" + k + "]:input", form)[0], errors[k]);
+				$("[name=" + k + "]:input", form).each(function() { _tooltip(this, errors[k]); });
 		}
 		return this;
 	};
 
 	this.flush = function() {
-		$("[alt]:input", form).each(function() {
-			$(this).tooltip({ content: "", items: "[alt]" }).tooltip("close");
-		});
+		$("span.tooltip", form).remove();
 		return this;
 	};
 
