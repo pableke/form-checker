@@ -100,7 +100,6 @@
 	$("input[tabindex=1]").focus();
 	var fc = new FormChecker($("form")[0]);
 	$("form").submit(function() {
-		fc.flush();
 		alert(fc.check() ? "ok" : "error");
 		return false;
 	});

@@ -162,6 +162,7 @@ function DateFormat() {
 	};
 
 	function lpad(val, len) {
+		val = new String(val);
 		for (len = len || 2; val.length < len; )
 			val = "0" + val;
 		return val;
@@ -401,6 +402,7 @@ function FormChecker(form, i18n) {
 	};
 
 	this.check = function() {
+		this.flush();
 		var ok = true;
 		for (var k in _validators) {
 			$("[" + k + "]:input", form).each(function() {
