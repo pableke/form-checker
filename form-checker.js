@@ -110,7 +110,7 @@ function DateFormat(i18n) {
 	i18n.monthNamesShort = i18n.monthNamesShort || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 	i18n.monthNames = i18n.monthNames || ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-	function ldap(val) { return (val < 10) ? ("0" + val) : val; }; //alwais 2 digits
+	function lpad(val) { return (val < 10) ? ("0" + val) : val; }; //alwais 2 digits
 	function digit(coll, val) { return coll.indexOf(val) + 1; }; //-1 = false, int = 0
 
 	var now = new Date();
@@ -134,24 +134,24 @@ function DateFormat(i18n) {
 		flags.yyyy = flags.yyyy || (Y.substr(0, 2) + flags.yy);
 		flags.m = +flags.m || parseInt(flags.mm) || digit(i18n.monthNamesShort, flags.mmm)
 												|| digit(i18n.monthNames, flags.mmmm) || 1;
-		flags.mm = flags.mm || ldap(flags.m);
+		flags.mm = flags.mm || lpad(flags.m);
 		flags.mmm = flags.mmm || i18n.monthNamesShort[flags.m - 1];
 		flags.mmmm = flags.mmmm || i18n.monthNames[flags.m - 1];
 		flags.d = +flags.d || parseInt(flags.dd) || digit(i18n.dayNamesShort, flags.ddd)
 												|| digit(i18n.dayNames, flags.dddd) || 1;
-		flags.dd = flags.dd || ldap(flags.d);
+		flags.dd = flags.dd || lpad(flags.d);
 		var D = (new Date(flags.yyyy, flags.m, flags.d)).getDay();
 		flags.ddd = flags.ddd || i18n.dayNamesShort[D];
 		flags.dddd = flags.dddd || i18n.dayNames[D];
 		flags.h = flags.h || flags.hh;
 		flags.H = flags.H || flags.HH || flags.h || 0;
-		flags.HH = flags.HH || ldap(flags.H);
+		flags.HH = flags.HH || lpad(flags.H);
 		flags.h = flags.h || (flags.H % 12) || 12;
-		flags.hh = flags.hh || ldap(flags.h);
+		flags.hh = flags.hh || lpad(flags.h);
 		flags.M = flags.M || 0;
-		flags.MM = flags.MM || ldap(flags.M);
+		flags.MM = flags.MM || lpad(flags.M);
 		flags.s = flags.s || "0";
-		flags.ss = flags.ss || ldap(flags.s);
+		flags.ss = flags.ss || lpad(flags.s);
 		flags.t = flags.t || ((+flags.H < 12) ? "a" : "p");
 		flags.tt = flags.tt || flags.t + "m";
 		flags.T = flags.T || flags.t.toUpperCase();
