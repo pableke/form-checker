@@ -99,7 +99,7 @@ function DateFormat(i18n) {
 		isoTime:             "HH:MM:ss",
 		isoDateTime:         "yyyy-mm-dd HH:MM:ss",
 		latinDateTime:       "dd/mm/yyyy HH:MM:ss",
-		isoUtcDateTime:      "UTC:yyyy-mm-dd HH:MM:ssZ",
+		isoUtcDateTime:      "yyyy-mm-dd HH:MM:ss Z",
 		dateTime:            "yyyy-mm-dd HH:MM:ss",
 		expiresHeaderFormat: "ddd, dd mmm yyyy HH:MM:ss Z"
 	};
@@ -110,10 +110,14 @@ function DateFormat(i18n) {
 	i18n.monthNamesShort = i18n.monthNamesShort || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 	i18n.monthNames = i18n.monthNames || ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-	function ldap(val) { return (val < 10) ? ("0" + val) : val; };
+	function ldap(val) { return (val < 10) ? ("0" + val) : val; }; //alwais 2 digits
 	function digit(coll, val) { return coll.indexOf(val) + 1; }; //-1 = false, int = 0
-	function dayOfWeek(date) { return date.getDay(); }; //get number day in week
-	var Y = (new Date()).getFullYear().toString(); //this year string
+
+	var now = new Date();
+	var Y = now.getFullYear().toString(); //this year string
+	var tzo = now.getTimezoneOffset(); //local time zone offset
+	var o = (Math.floor(Math.abs(tzo) / 60) * 100 + Math.abs(tzo) % 60).toString();
+	var O = ((tzo < 0) ? "-" : "+") + "0000".substring(o.length) + o;
 
 	this.trDate = function(date, mask, dest) {
 		mask = masks[mask] || mask || masks.default;
@@ -136,14 +140,15 @@ function DateFormat(i18n) {
 		flags.d = +flags.d || parseInt(flags.dd) || digit(i18n.dayNamesShort, flags.ddd)
 												|| digit(i18n.dayNames, flags.dddd) || 1;
 		flags.dd = flags.dd || ldap(flags.d);
-		var ddd = dayOfWeek(new Date(flags.yyyy, flags.m, flags.d));
-		flags.ddd = flags.ddd || i18n.dayNamesShort[ddd];
-		flags.dddd = flags.dddd || i18n.dayNames[ddd];
-		flags.h = flags.h || "0";
-		flags.hh = flags.hh || ldap(flags.h);
-		flags.H = flags.H || "0";
+		var D = (new Date(flags.yyyy, flags.m, flags.d)).getDay();
+		flags.ddd = flags.ddd || i18n.dayNamesShort[D];
+		flags.dddd = flags.dddd || i18n.dayNames[D];
+		flags.h = flags.h || flags.hh;
+		flags.H = flags.H || flags.HH || flags.h || 0;
 		flags.HH = flags.HH || ldap(flags.H);
-		flags.M = flags.M || "0";
+		flags.h = flags.h || (flags.H % 12) || 12;
+		flags.hh = flags.hh || ldap(flags.h);
+		flags.M = flags.M || 0;
 		flags.MM = flags.MM || ldap(flags.M);
 		flags.s = flags.s || "0";
 		flags.ss = flags.ss || ldap(flags.s);
@@ -152,9 +157,7 @@ function DateFormat(i18n) {
 		flags.T = flags.T || flags.t.toUpperCase();
 		flags.TT = flags.TT || flags.T + "M";
 		flags.Z = flags.Z || "";
-		var o = (date.indexOf("+0") > 6) ? "+" : "-";
-		flags.o = flags.o ? (o + flags.o) : "+0000";
-		//traslate date format from source mask to date output mask
+		flags.o = flags.o ? (((date.lastIndexOf("+") > 6) ? "+" : "-") + flags.o) : O;
 		return dest.replace(reMaskTokens, function(match) { return flags[match]; });
 	};
 
