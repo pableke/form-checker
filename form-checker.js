@@ -1,6 +1,10 @@
 
 //funciones para la validacion y saneado de valores numericos
 function NumberFormat() {
+	var self = this; //auto-reference
+	const binMask = /[^01]+/g;
+	const decMask = /[^0-9e]+/gi;
+	const hexMask = /[^0-9a-f]/gi;
 	const masks = {
 		default: { decimals: 2, whole: 3, section: ",", decimal: "." },
 		float:   { decimals: 2, whole: 3, section: ",", decimal: "." },
@@ -9,6 +13,7 @@ function NumberFormat() {
 		binary:  { decimals: 0, whole: 4, section: "-", base: 2 },
 		hex:     { decimals: 0, whole: 2, section: ".", base: 16 }
 	};
+	this.masks = masks;
 
 	function lpad(val, len) {
 		while (val.length < len)
@@ -38,30 +43,23 @@ function NumberFormat() {
 	};
 
 	/**
-	 * _number(v, s, c)
-	 *
-	 * @param string  v: value to format
-	 * @param mixed   s: sections delimiter
-	 * @param mixed   c: decimal delimiter
-	 * @param integer b: number base format (default base 10)
-	 */
-	var _number = function(v, s, c, b) {
-		if (typeof v != "string") return v;
-		var reWholePart = new RegExp("[\\s" + s + "]+", "g");
-		var num = (b && (b != 10)) ? parseInt(v.replace(reWholePart, "").replace(c, ""), b)
-									: parseFloat(v.replace(reWholePart, "").replace(c, "."));
-		return isNaN(num) ? parseFloat(v) : num;
-	};
-
-	/**
 	 * toNumber(value, mask)
 	 *
 	 * @param string value: input to convert
 	 * @param string/object mask: input value format
 	 */
 	this.toNumber = function(value, mask) {
+		if (typeof value != "string") return value;
 		var opts = masks[mask] || mask || masks.default;
-		return _number(value, opts.section, opts.decimal, opts.base);
+		if (opts.base == 2)
+			return parseInt(value.replace(binMask, ""), 2);
+		if (opts.base == 16)
+			return parseInt(value.replace(hexMask, ""), 16);
+		var i = value.lastIndexOf(opts.decimal);
+		var num = value.replace(decMask, "");
+		if (i < 0) return parseFloat(num);
+		i = num.length - (value.length - i) + 1;
+		return parseFloat(num.substr(0, i) + "." + num.substr(i));
 	};
 
 	/**
@@ -75,6 +73,17 @@ function NumberFormat() {
 		var opts = masks[mask] || mask || masks.default;
 		return _format(value, opts.whole || 3, opts.decimals || 0,
 						opts.section, opts.decimal, opts.base);
+	};
+
+	/**
+	 * trNumber(value, mask, dest)
+	 *
+	 * @param string value: value to format
+	 * @param string/object mask: format to apply
+	 * @param string/object dest: destination mask
+	 */
+	this.trNumber = function(value, mask, dest) {
+		return self.format(self.toNumber(value, mask), dest || mask);
 	};
 };
 /***************************** FIN BLOQUE *****************************/
