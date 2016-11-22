@@ -227,7 +227,7 @@ function FormChecker(form, i18n) {
 		},
 
 		digits: function(elem, elemval, attr, attrval) {
-			return !_bool(elem, attr) || !elemval || /\d+/.test(elemval);
+			return !_bool(elem, attr) || !elemval || /^\d+$/.test(elemval);
 		},
 
 		number: function(elem, elemval, attr, attrval) { //attr = mask number format
