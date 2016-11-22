@@ -3,7 +3,7 @@
 function NumberFormat() {
 	var self = this; //auto-reference
 	const binMask = /[^01]+/g;
-	const decMask = /[^0-9e]+/gi;
+	const intMask = /[^0-9e\-]+/gi;
 	const hexMask = /[^0-9a-f]/gi;
 	const masks = {
 		default: { decimals: 2, whole: 3, section: ",", decimal: "." },
@@ -13,7 +13,6 @@ function NumberFormat() {
 		binary:  { decimals: 0, whole: 4, section: "-", base: 2 },
 		hex:     { decimals: 0, whole: 2, section: ".", base: 16 }
 	};
-	this.masks = masks;
 
 	function lpad(val, len) {
 		while (val.length < len)
@@ -37,7 +36,7 @@ function NumberFormat() {
 	 * @param integer b: number base format (default base 10)
 	*/
 	var _format = function(v, x, n, s, c, b) {
-		var num = b ? chunk((~~v).toString(b), x) : v.toFixed(Math.max(0, n));
+		var num = (b && (b != 10)) ? chunk((v >>> 0).toString(b), x) : v.toFixed(Math.max(0, n));
 		var re = new RegExp("[0-9a-f](?=([0-9a-f]{" + x + "})+" + (n > 0 ? "\\D" : "$") + ")", "gi");
 		return (c ? num.replace(".", c) : num).replace(re, "$&" + (s || ","));
 	};
@@ -52,11 +51,11 @@ function NumberFormat() {
 		if (typeof value != "string") return value;
 		var opts = masks[mask] || mask || masks.default;
 		if (opts.base == 2)
-			return parseInt(value.replace(binMask, ""), 2);
+			return parseInt(value.replace(binMask, ""), 2) >> 0; // to int32
 		if (opts.base == 16)
-			return parseInt(value.replace(hexMask, ""), 16);
+			return parseInt(value.replace(hexMask, ""), 16) >> 0; // to int32
 		var i = value.lastIndexOf(opts.decimal);
-		var num = value.replace(decMask, "");
+		var num = value.replace(intMask, "");
 		if (i < 0) return parseFloat(num);
 		i = num.length - (value.length - i) + 1;
 		return parseFloat(num.substr(0, i) + "." + num.substr(i));
@@ -194,93 +193,92 @@ function FormChecker(form, i18n) {
 	var nf = new NumberFormat();
 	var df = new DateFormat(i18n);
 
-	var _val = function(elem, name) { return $(elem).val() || ""; };
-	var _attr = function(elem, name) { return elem && elem.getAttribute(name); };
-	var _fAttr = function(elem, name) { return parseFloat(_attr(elem, name)); };
-	var _fVal = function(elem, name) { return parseFloat(_val(elem, name)); };
+	var _val = function(elem) { return $(elem).val() || ""; };
+	var _fVal = function(elem, name) { return parseFloat(_val(elem)); };
+	var _fAttr = function(elem, name) { return parseFloat($(elem).attr(name)); };
 	var _boolval = function(val) { return val && (val != "false") && (val != "0"); };
-	var _bool = function(elem, name) { return _boolval(_val(elem, name)); };
+	var _bool = function(elem, name) { return _boolval($(elem).attr(name)); };
 
 	var _tooltip = function(elem, attr) {
-		var msg = _attr(elem, "data-msg-" + attr) || i18n["msg.err." + attr] || i18n["msg.err.value"];
-		var box = (_attr(elem, "type") == "hidden") ? $(elem).siblings("[alt=errbox]") : $(elem);
+		var msg = $(elem).attr("data-msg-" + attr) || i18n["msg.err." + attr] || i18n["msg.err.value"];
+		var box = ($(elem).attr("type") == "hidden") ? $(elem).siblings("[alt=errbox]") : $(elem);
 		box.next("span.tooltip").length || box.after('<span class="tooltip">' + msg + '</span>').show();
 		return elem;
 	};
 
-	var _validators = { //metodos de validacion
-		required: function(elem, attr) {
-			return _bool(elem) ? _val(elem) : true;
+	var validators = { //metodos de validacion
+		required: function(elem, elemval, attr) {
+			return _boolval(elemval) ? elemval : true;
 		},
 
-		minlength: function(elem, attr) {
-			return !_val(elem) || (_fAttr(elem, attr) <= _val(elem).length);
+		minlength: function(elem, elemval, attr) {
+			return !elemval || (_fAttr(elem, attr) <= elemval.length);
 		},
 
-		maxlength: function(elem, attr) {
-			return !_val(elem) || (_fAttr(elem, attr) >= _val(elem).length);
+		maxlength: function(elem, elemval, attr) {
+			return !elemval || (_fAttr(elem, attr) >= elemval.length);
 		},
 
-		email: function(elem, attr) {
-			return !_bool(attr) || !_val(elem) || /\w+[^\s@]+@[^\s@]+\.[^\s@]+/.test(_val(elem));
+		email: function(elem, elemval, attr) {
+			return !_bool(elem, attr) || !elemval || /\w+[^\s@]+@[^\s@]+\.[^\s@]+/.test(elemval);
 		},
 
-		regex: function(elem, attr) {
-			return !_val(elem) || (new RegExp(_attr(elem, attr))).test(_val(elem));
+		regex: function(elem, elemval, attr, attrval) {
+			return !elemval || (new RegExp(attrval)).test(elemval);
 		},
 
-		digits: function(elem) {
-			return !_bool(attr) || !_val(elem) || /\d+/.test(_val(elem));
+		digits: function(elem, elemval, attr, attrval) {
+			return !_bool(elem, attr) || !elemval || /\d+/.test(elemval);
 		},
 
-		number: function(elem, attr) { //attr = mask number format
-			return !_val(elem) || !isNaN(nf.toNumber(_val(elem), _attr(elem, attr)));
+		number: function(elem, elemval, attr, attrval) { //attr = mask number format
+			return !elemval || !isNaN(nf.toNumber(elemval, attrval));
 		},
 
-		min: function(elem, attr) {
-			var value = nf.toNumber(_val(elem), _attr(elem, "number"));
-			return !_val(elem) || (!isNaN(value) && (_fAttr(elem, attr) <= value));
+		min: function(elem, elemval, attr, attrval) {
+			var value = nf.toNumber(elemval, $(elem).attr("number"));
+			return !elemval || (!isNaN(value) && (_fAttr(elem, attr) <= value));
 		},
 
-		max: function(elem, attr) {
-			var value = nf.toNumber(_val(elem), _attr(elem, "number"));
-			return !_val(elem) || (!isNaN(value) && (_fAttr(elem, attr) >= value));
+		max: function(elem, elemval, attr, attrval) {
+			var value = nf.toNumber(elemval, $(elem).attr("number"));
+			return !elemval || (!isNaN(value) && (_fAttr(elem, attr) >= value));
 		},
 
-		range: function(elem, attr) {
-			if (!_val(elem)) return true;
+		range: function(elem, elemval, attr, attrval) {
+			if (!elemval) return true;
 			try {
-				var range = JSON.parse(_attr(elem, attr));
+				var range = JSON.parse(attrval);
 			} catch(e) {
 				return false;
 			}
 			return (_fVal(elem) >= parseFloat(range[0])) && (_fVal(elem) <= parseFloat(range[1]));
 		},
 
-		date: function(elem, attr) {
-			return !_val(elem) || df.isDate(df.toDate(_val(elem), _attr(elem, attr)));
+		date: function(elem, elemval, attr, attrval) {
+			return !elemval || df.isDate(df.toDate(elemval, attrval));
 		},
 
-		mindate: function(elem, attr) {
-			var min = new Date(_attr(elem, attr));
-			return !_val(elem) || (df.isDate(min) && _validators.date(elem, "date")
-								&& (min <= df.toDate(_val(elem), _attr(elem, "date"))));
+		mindate: function(elem, elemval, attr, attrval) {
+			var min = new Date(attrval);
+			return !elemval || (df.isDate(min) && validators.date(elem, "date")
+							&& (min <= df.toDate(elemval, $(elem).attr("date"))));
 		},
 
-		maxdate: function(elem, attr) {
-			var max = new Date(_attr(elem, attr));
-			return !_val(elem) || (df.isDate(max) && _validators.date(elem, "date")
-								&& (max >= df.toDate(_val(elem), _attr(elem, "date"))));
+		maxdate: function(elem, elemval, attr, attrval) {
+			var max = new Date(attrval);
+			return !elemval || (df.isDate(max) && validators.date(elem, "date")
+							&& (max >= df.toDate(elemval, $(elem).attr("date"))));
 		},
 
-		equalto: function(elem, attr) {
-			return !_val(elem) || (_val(elem) == $(_attr(elem, attr), form).val());
+		equalto: function(elem, elemval, attr, attrval) {
+			return !elemval || (elemval == $(attrval, form).val());
 		}
 	};
 
-	this.get = function(name) { return _validators[name]; };
+	this.get = function(name) { return validators[name]; };
 	this.set = function(name, fn) {
-		_validators[name] = fn;
+		validators[name] = fn;
 		return this;
 	};
 
@@ -300,10 +298,10 @@ function FormChecker(form, i18n) {
 	this.check = function() {
 		this.flush();
 		var ok = true;
-		for (var k in _validators) {
-			$("[" + k + "]:input", form).each(function() {
-				var fn = _validators[k];
-				ok = fn(this, k) ? ok : !_tooltip(this, k);
+		for (var k in validators) {
+			$("[" + k + "]:input", form).each(function(i, e) {
+				var fn = validators[k];
+				ok = fn(e, _val(e), k, $(e).attr(k)) ? ok : !_tooltip(e, k);
 			});
 		}
 		return ok;
