@@ -193,8 +193,7 @@ function FormChecker(form, i18n) {
 	var nf = new NumberFormat();
 	var df = new DateFormat(i18n);
 
-	var _val = function(elem) { return $(elem).val() || ""; };
-	var _fVal = function(elem, name) { return parseFloat(_val(elem)); };
+	var _fVal = function(elem, name) { return parseFloat($(elem).val()); };
 	var _fAttr = function(elem, name) { return parseFloat($(elem).attr(name)); };
 	var _boolval = function(val) { return val && (val != "false") && (val != "0"); };
 	var _bool = function(elem, name) { return _boolval($(elem).attr(name)); };
@@ -299,9 +298,9 @@ function FormChecker(form, i18n) {
 		this.flush();
 		var ok = true;
 		for (var k in validators) {
+			var fn = validators[k];
 			$("[" + k + "]:input", form).each(function(i, e) {
-				var fn = validators[k];
-				ok = fn(e, _val(e), k, $(e).attr(k)) ? ok : !_tooltip(e, k);
+				ok = fn(e, $(e).val(), k, $(e).attr(k)) ? ok : !_tooltip(e, k);
 			});
 		}
 		return ok;
